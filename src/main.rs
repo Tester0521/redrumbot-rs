@@ -1,11 +1,10 @@
 use teloxide::prelude::*;
-use teloxide::types::{User, InlineKeyboardMarkup, InlineKeyboardButton};
+use teloxide::types::{User, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ParseMode};
 use teloxide::utils::command::BotCommands;
 use reqwest::Client as HttpClient;
 use serde_json::Value;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::dptree::endpoint;
 
 
 #[derive(BotCommands, Clone)]
@@ -36,11 +35,18 @@ async fn gen_res(prompt: &str, selected_model: Arc<Mutex<String>>) -> Result<Str
         .await?;
     let text = res.text().await?;
 
-    println!("{:?}\n################################################\n\n", text);
+
 
     for line in text.lines() {
         if let Ok(parsed_json) = serde_json::from_str::<Value>(line) {
+            if let Some(response) = parsed_json["model"].as_str() {
+                println!("{:?}", response);
+            }
+            if let Some(response) = parsed_json["created_at"].as_str() {
+                println!("{:?}", response);
+            }
             if let Some(response) = parsed_json["response"].as_str() {
+                println!("{:?}\n################################################\n\n", response);
                 return Ok(response.to_string());
             }
         } else {
@@ -119,7 +125,7 @@ async fn main() {
                             
                         if let Ok(res) = gen_res(&prompt, selected_model).await {
                             bot.delete_message(message.chat.id, processing_msg.id).await?;
-                            bot.send_message(message.chat.id, res).await?;
+                            bot.send_message(message.chat.id, res).parse_mode(ParseMode::Markdown).await?;
                         } else {
                             bot.delete_message(message.chat.id, processing_msg.id).await?;
                             bot.send_message(message.chat.id, "Сорри, я сломался :(( Попробуйте повторить запрос.").await?;
@@ -143,7 +149,7 @@ async fn main() {
         }
     }));
 
-    let dispatcher = Dispatcher::builder(bot.clone(), message_handler)
+    Dispatcher::builder(bot.clone(), message_handler)
         .enable_ctrlc_handler()
         .build()
         .dispatch()
