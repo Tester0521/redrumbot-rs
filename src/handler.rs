@@ -1,10 +1,10 @@
 use teloxide::prelude::*;
 use teloxide::types::{InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery};
-use teloxide::utils::command::BotCommands;
 use teloxide::types::InputFile;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use crate::commands::Command;
+use crate::commands::AdminCommand;
 use crate::api::gen_qr;
 
 pub async fn invoke(bot: Bot, message: Message, cmd: Command) -> ResponseResult<()> {
@@ -29,13 +29,24 @@ pub async fn invoke(bot: Bot, message: Message, cmd: Command) -> ResponseResult<
         Command::Whisper { to, msg } => {
             if let 7598600022 = message.chat.id.0 {
                 bot.send_message(teloxide::prelude::ChatId(to), msg.clone()).await?;
-            } 
+            }
 
             bot.send_message(teloxide::prelude::ChatId(7598600022), format!("{} - {} - {}", message.chat.id.0, to, msg)).await?
         },
         Command::Help => bot.send_message(message.chat.id, "Никто тебе не поможет...").await?,
         Command::Start => bot.send_message(message.chat.id, "Спрашивай что угодно! Я умнее ЧатГПТ").await?,
     };
+
+    Ok(())
+}
+
+pub async fn admin_invoke(bot: Bot, message: Message, cmd: AdminCommand) -> ResponseResult<()> {
+    if let 7598600022 = message.chat.id.0 {
+        match cmd {
+            AdminCommand::Whisper { to, msg } => bot.send_message(teloxide::prelude::ChatId(to), msg.clone()).await?,
+        };
+    }
+
 
     Ok(())
 }

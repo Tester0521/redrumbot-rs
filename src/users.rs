@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use serde_json::{self, Value};
+use serde_json::{self};
 use teloxide::prelude::*;
 use std::sync::Arc;
 use tokio::sync::Mutex;
