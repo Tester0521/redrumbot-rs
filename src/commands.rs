@@ -7,6 +7,8 @@ pub enum Command {
     Start,
     #[command(description = "Выбрать модель")]
     Select,
+    #[command(description = "Генерация qr", parse_with = "split")]
+    Qr { data: String, version: i16, style: String },
     #[command(description = "Помощь")]
     Help,
 }

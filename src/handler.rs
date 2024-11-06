@@ -1,9 +1,11 @@
 use teloxide::prelude::*;
 use teloxide::types::{InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery};
 use teloxide::utils::command::BotCommands;
+use teloxide::types::InputFile;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use crate::commands::Command;
+use crate::api::gen_qr;
 
 pub async fn invoke(bot: Bot, message: Message, cmd: Command) -> ResponseResult<()> {
     match cmd {
@@ -11,12 +13,19 @@ pub async fn invoke(bot: Bot, message: Message, cmd: Command) -> ResponseResult<
             let keyboard = InlineKeyboardMarkup::new(
                 vec![
                     vec![InlineKeyboardButton::callback("v1 default", "llama3.1:8b")],
-                    vec![InlineKeyboardButton::callback("v2 (32gb ram)", "llama3.1:70b")],
+                    // vec![InlineKeyboardButton::callback("v2 (32gb ram)", "llama3.1:70b")],
                 ]);
             bot.send_message(message.chat.id, "Выберите модель:")
                 .reply_markup(keyboard)
                 .await?
-        }
+        },
+        Command::Qr { data, version, style } => {
+            println!("Генерация... ({})", message.chat.id);
+
+            let buffer = gen_qr(&data, version, &style).await.unwrap();
+            let photo = InputFile::memory(buffer);
+            bot.send_photo(message.chat.id, photo).await?
+        },
         Command::Help => bot.send_message(message.chat.id, Command::descriptions().to_string()).await?,
         Command::Start => bot.send_message(message.chat.id, "Спрашивай что угодно! Я умнее ЧатГПТ").await?,
     };
