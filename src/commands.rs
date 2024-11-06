@@ -9,6 +9,8 @@ pub enum Command {
     Select,
     #[command(description = "Генерация qr", parse_with = "split")]
     Qr { data: String, version: i16, style: String },
+    #[command(description = "Генерация qr", parse_with = "split")]
+    Whisper { to: i64, msg: String },
     #[command(description = "Помощь")]
     Help,
 }

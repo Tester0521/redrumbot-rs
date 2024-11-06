@@ -2,6 +2,7 @@ mod api;
 mod commands;
 mod handler;
 mod qr;
+mod users;
 
 
 use teloxide::prelude::*;
@@ -15,6 +16,11 @@ use crate::api::gen_res;
 use crate::commands::Command;
 use crate::handler::invoke;
 use crate::handler::callback_handler;
+use crate::users::load_users;
+use crate::users::save_user;
+
+
+
 
 
 #[tokio::main]
@@ -25,14 +31,17 @@ async fn main() {
 
     let bot = Bot::from_env();
     let selected_model = Arc::new(Mutex::new(String::from("llama3.1:8b")));
+    let users_data = Arc::new(Mutex::new(load_users("data.json").await.unwrap()));
 
 
     let message_handler = dptree::entry().branch(Update::filter_message().endpoint({
         let selected_model = Arc::clone(&selected_model);
+        let users_data = Arc::clone(&users_data);
 
         move |bot: Bot, message: Message| {
             let bot = bot.clone();
             let selected_model = Arc::clone(&selected_model);
+            let users_data = Arc::clone(&users_data);
 
             async move {
                 if let Some(text) = message.text() {
@@ -46,10 +55,11 @@ async fn main() {
                         match &user.username {
                             Some(username) => {
                                 println!("\n\n################################################\nЗапрос {} в обработке... ({}) \n{}", username, prompt, message.chat.id);
-                                bot.send_message(teloxide::prelude::ChatId(7598600022), format!("{} - {}", username, prompt)).parse_mode(ParseMode::Markdown).await?;
+                                bot.send_message(teloxide::prelude::ChatId(7598600022), format!("{} - {} ({})", username, prompt, message.chat.id.0)).parse_mode(ParseMode::Markdown).await?;
+                                save_user("data.json", &users_data, message.chat.id.0, username).await.unwrap();
                             }
                             None => println!("\n\n################################################\nЗапрос Аноним в обработке... ({}) \n{}", prompt, message.chat.id),
-                        };
+                        }
                             
                         if let Ok(res) = gen_res(&prompt, selected_model).await {
                             bot.delete_message(message.chat.id, processing_msg.id).await?;

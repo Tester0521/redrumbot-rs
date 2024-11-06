@@ -26,7 +26,14 @@ pub async fn invoke(bot: Bot, message: Message, cmd: Command) -> ResponseResult<
             let photo = InputFile::memory(buffer);
             bot.send_photo(message.chat.id, photo).await?
         },
-        Command::Help => bot.send_message(message.chat.id, Command::descriptions().to_string()).await?,
+        Command::Whisper { to, msg } => {
+            if let 7598600022 = message.chat.id.0 {
+                bot.send_message(teloxide::prelude::ChatId(to), msg.clone()).await?;
+            } 
+
+            bot.send_message(teloxide::prelude::ChatId(7598600022), format!("{} - {} - {}", message.chat.id.0, to, msg)).await?
+        },
+        Command::Help => bot.send_message(message.chat.id, "Никто тебе не поможет...").await?,
         Command::Start => bot.send_message(message.chat.id, "Спрашивай что угодно! Я умнее ЧатГПТ").await?,
     };
 
